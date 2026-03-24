@@ -31,6 +31,9 @@ export default function Home() {
   const [filtre, setFiltre] = useState('tous')
   const [strategie, setStrategie] = useState('locatif')
   const [tri, setTri] = useState('rendement')
+  const [recherche, setRecherche] = useState('')
+  const [prixMax, setPrixMax] = useState('')
+  const [surfaceMin, setSurfaceMin] = useState('')
 
   useEffect(() => {
     const fetchBiens = async () => {
@@ -54,30 +57,39 @@ export default function Home() {
     fetchBiens()
   }, [])
 
-  const biensFiltres = biens
-    .filter((b) => {
-      if (filtre === 'locatif') {
-        return b.strategies_rentables?.includes('locatif')
-      }
-      if (filtre === 'revente') {
-        return b.strategies_rentables?.includes('achat_revente')
-      }
-      if (filtre === '8+') {
-        return b.rendement_brut >= 8
-      }
-      if (filtre === '10+') {
-        return b.rendement_brut >= 10
-      }
-      return true
-    })
-    .sort((a, b) => {
-      if (tri === 'rendement') return b.rendement_brut - a.rendement_brut
-      if (tri === 'prix_asc') return a.prix - b.prix
-      if (tri === 'prix_desc') return b.prix - a.prix
-      if (tri === 'cashflow') return b.cashflow_mensuel - a.cashflow_mensuel
-      return 0
-    })
+const biensFiltres = biens
+  .filter((b) => {
+    const matchRecherche =
+      recherche.trim() === '' ||
+      b.ville?.toLowerCase().includes(recherche.toLowerCase()) ||
+      b.titre?.toLowerCase().includes(recherche.toLowerCase())
 
+    const matchPrix =
+      prixMax === '' || b.prix <= Number(prixMax)
+
+    const matchSurface =
+      surfaceMin === '' || b.surface >= Number(surfaceMin)
+
+    const matchFiltre =
+      filtre === 'locatif'
+        ? b.strategies_rentables?.includes('locatif')
+        : filtre === 'revente'
+          ? b.strategies_rentables?.includes('achat_revente')
+          : filtre === '8+'
+            ? b.rendement_brut >= 8
+            : filtre === '10+'
+              ? b.rendement_brut >= 10
+              : true
+
+    return matchRecherche && matchPrix && matchSurface && matchFiltre
+  })
+  .sort((a, b) => {
+    if (tri === 'rendement') return b.rendement_brut - a.rendement_brut
+    if (tri === 'prix_asc') return a.prix - b.prix
+    if (tri === 'prix_desc') return b.prix - a.prix
+    if (tri === 'cashflow') return b.cashflow_mensuel - a.cashflow_mensuel
+    return 0
+  })
   const prixMoyen =
     biens.length > 0
       ? Math.round(biens.reduce((s, b) => s + b.prix, 0) / biens.length / 1000)
@@ -233,6 +245,71 @@ export default function Home() {
         </select>
 
         <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#9ca3af' }}>
+        <input
+          type="text"
+          placeholder="Rechercher ville ou titre"
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+          style={{
+            padding: '6px 10px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            border: '1px solid #e5e7eb',
+            background: 'white',
+            minWidth: '180px',
+          }}
+        />
+
+        <input
+          type="number"
+          placeholder="Prix max"
+          value={prixMax}
+          onChange={(e) => setPrixMax(e.target.value)}
+          style={{
+            padding: '6px 10px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            border: '1px solid #e5e7eb',
+            background: 'white',
+            width: '110px',
+          }}
+        />
+
+        <input
+          type="number"
+          placeholder="Surface min"
+          value={surfaceMin}
+          onChange={(e) => setSurfaceMin(e.target.value)}
+          style={{
+            padding: '6px 10px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            border: '1px solid #e5e7eb',
+            background: 'white',
+            width: '110px',
+          }}
+        />
+
+         <button
+           onClick={() => {
+             setRecherche('')
+             setPrixMax('')
+             setSurfaceMin('')
+             setFiltre('tous')
+             setTri('rendement')
+           }}
+           style={{
+             padding: '6px 10px',
+             borderRadius: '8px',
+             fontSize: '12px',
+             border: 'none',
+             background: '#111827',
+             color: 'white',
+             cursor: 'pointer',
+           }}
+         >
+           Reset
+         </button>
           {biensFiltres.length} resultats
         </span>
       </div>
